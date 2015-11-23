@@ -17,9 +17,32 @@ lr = LogisticRegression()
 lr.fit(X_train, y_train)
 print accuracy_score(lr.predict(X_test), y_test)
 
-tf.set_random_seed(42)
+
+# Linear classifier.
+
 random.seed(42)
-tflr = skflow.TensorFlowRegressor(n_classes=2, batch_size=128,#X_train.shape[0], 
-                                  steps=500, learning_rate=0.05)
+tflr = skflow.TensorFlowLinearClassifier(n_classes=2, batch_size=128, 
+                                         steps=500, learning_rate=0.05)
 tflr.fit(X_train, y_train)
-print accuracy_score(tflr.predict(X_test), y_test) 
+print accuracy_score(tflr.predict(X_test), y_test)
+
+# 3 layer neural network with rectified linear activation.
+
+random.seed(42)
+classifier = skflow.TensorFlowDNNClassifier(hidden_units=[10, 20, 10], 
+    n_classes=2, batch_size=128, steps=500, learning_rate=0.05)
+classifier.fit(X_train, y_train)
+print accuracy_score(classifier.predict(X_test), y_test)
+
+# 3 layer neural network with hyperbolic tangent activation.
+
+def dnn_tanh(X, y):
+    layers = skflow.ops.dnn(X, [10, 20, 10], tf.tanh)
+    return skflow.models.logistic_regression(layers, y)
+
+random.seed(42)
+classifier = skflow.TensorFlowEstimator(model_fn=dnn_tanh,
+    n_classes=2, batch_size=128, steps=500, learning_rate=0.05)
+classifier.fit(X_train, y_train)
+print accuracy_score(classifier.predict(X_test), y_test)
+
