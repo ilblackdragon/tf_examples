@@ -7,7 +7,7 @@ from sklearn.cross_validation import train_test_split
 
 import tensorflow as tf
 
-import skflow
+from tensorflow.contrib import learn as skflow
 
 train = pandas.read_csv('data/titanic_train.csv')
 y, X = train['Survived'], train[['Age', 'SibSp', 'Fare']].fillna(0)
