@@ -1,3 +1,3 @@
 # TensorFlow examples
 
-TensorFlow and Scikit Flow examples
+TensorFlow and TF.Learn examples
