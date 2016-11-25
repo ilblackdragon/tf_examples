@@ -15,7 +15,7 @@ y = data["Survived"]
 X_train, X_test, y_train, y_test = cross_validation.train_test_split(X, y, test_size=0.2, random_state=42)
 
 embarked_classes = X_train["Embarked"].unique()
-n_classes = len(embarked_classes)
+n_classes = len(embarked_classes) + 1
 print('Embarked has next classes: ', embarked_classes)
 
 cat_processor = learn.preprocessing.CategoricalProcessor()
