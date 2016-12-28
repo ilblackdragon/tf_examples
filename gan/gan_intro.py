@@ -27,14 +27,19 @@ def gan_model(feature, unused_target):
   discr_true = discriminator(feature, 10)
   discr_generated = discriminator(feature_generated, 10, reuse=True)
   loss_discr = tf.reduce_mean(-tf.log(discr_true) - tf.log(1 - discr_generated))
+  loss_discr = tf.identity(loss_discr, name="loss_discr")
   loss_generator = tf.reduce_mean(-tf.log(discr_generated))
+  loss_generator = tf.identity(loss_generator, name="loss_generator")
+  tf.summary.scalar("loss/discr", loss_discr)
+  tf.summary.scalar("loss/generator", loss_generator)
+  tf.summary.scalar("loss/total", loss_discr + loss_generator)
 
   variables = tf.trainable_variables()
   generator_params = [v for v in variables if v.name.startswith('Generator/')]
   discriminator_params = [v for v in variables if v.name.startswith('Discriminator/')]
   gc = tf.contrib.framework.get_global_step()
   learning_rate = tf.train.exponential_decay(
-    0.005, gc, 150, 0.95, staircase=True)
+    0.05, gc, 150, 0.95, staircase=True)
   with tf.variable_scope('Discriminator'):
     discriminator_train_op = layers.optimize_loss(
       loss_discr, gc, variables=discriminator_params,
@@ -52,8 +57,11 @@ def main():
   tf.logging._logger.setLevel(logging.INFO)
   data = np.random.normal(4, 0.5, 10000).astype(np.float32)
   data.sort()
-  est = learn.Estimator(model_fn=gan_model)
-  est.fit(x=data, y=data, steps=10000, batch_size=32)
+  est = learn.SKCompat(learn.Estimator(model_fn=gan_model,
+  model_dir='gan_intro/'))
+  print_monitor = tf.train.LoggingTensorHook(['loss_discr', 'loss_generator'],
+      every_n_iter=100)
+  est.fit(x=data, y=data, steps=10000, batch_size=32, monitors=[print_monitor])
 
 
 if __name__ == "__main__":
