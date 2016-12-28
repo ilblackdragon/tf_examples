@@ -14,20 +14,31 @@ def generator(x, hidden_size):
 
 def discriminator(x, hidden_size, scope='Discriminator', reuse=False):
   with tf.variable_scope(scope, reuse=reuse):
-    h0 = tf.tanh(layers.linear(x, hidden_size * 2))
-    h1 = tf.tanh(layers.linear(h0, hidden_size * 2))
-    h2 = tf.tanh(layers.linear(h1, hidden_size * 2))
-    return tf.sigmoid(layers.linear(h2, 1))
+    e0 = tf.nn.elu(layers.linear(x, hidden_size))
+    e1 = layers.linear(e0, 1)
+    d1 = tf.nn.elu(layers.linear(e1, hidden_size))
+    d0 = layers.linear(d1, 1)
+    return d0
+#    h0 = tf.tanh(layers.linear(x, hidden_size * 2))
+#    h1 = tf.tanh(layers.linear(h0, hidden_size * 2))
+#    h2 = tf.tanh(layers.linear(h1, hidden_size * 2))
+#    return tf.sigmoid(layers.linear(h2, 1))
 
 
 def gan_model(feature, unused_target):
+  epsilon = 0.01
   z = tf.random_uniform(tf.shape(feature), -1, 1, dtype=feature.dtype)
   z.set_shape(feature.get_shape())
   feature_generated = generator(z, 10)
   discr_true = discriminator(feature, 10)
   discr_generated = discriminator(feature_generated, 10, reuse=True)
-  loss_discr = tf.reduce_mean(-tf.log(discr_true) - tf.log(1 - discr_generated))
-  loss_generator = tf.reduce_mean(-tf.log(discr_generated))
+  loss_discr = (tf.reduce_mean(tf.square(feature - discr_true)) +
+    tf.reduce_mean(tf.nn.relu(epsilon -
+    tf.reduce_mean(tf.square(feature_generated - discr_generated), 1))))
+  loss_generator = tf.reduce_mean(tf.square(feature_generated -
+    discr_generated))
+#  loss_discr = tf.reduce_mean(-tf.log(discr_true) - tf.log(1 - discr_generated))
+#  loss_generator = tf.reduce_mean(-tf.log(discr_generated))
 
   variables = tf.trainable_variables()
   generator_params = [v for v in variables if v.name.startswith('Generator/')]
