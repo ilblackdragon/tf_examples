@@ -12,18 +12,20 @@ import gan_model
 import visualization
 
 
-def linear_generator(x, output_dim):
-  with tf.variable_scope('Generator'):
+def linear_generator(x, output_dim, scope='Generator'):
+  with tf.variable_scope(scope):
     return layers.linear(x, output_dim * output_dim)
 
 
-def conv_generator(x, output_dim, n_filters):
-  with tf.variable_scope('Generator'):
-    s2 = output_dim / 2
-    z_ = layers.linear(x, s2 * s2 * n_filters)
-    h0 = tf.reshape(z_, [-1, s2, s2, n_filters])
-    h1 = layers.convolution2d_transpose(h0, 1, [5, 5], stride=2)
-    return tf.reshape(tf.nn.tanh(h1), [-1, output_dim * output_dim])
+def conv_generator(x, output_dim, n_filters, scope='Generator'):
+  with tf.variable_scope(scope):
+    s4, s2 = int(output_dim / 4), int(output_dim / 2)
+    z_ = layers.linear(x, s4 * s4 * n_filters * 2)
+    h0 = tf.reshape(z_, [-1, s4, s4, n_filters * 2])
+    h1 = layers.convolution2d_transpose(h0, n_filters, [5, 5], stride=2)
+    h1 = tf.nn.elu(h1)
+    h2 = layers.convolution2d_transpose(h1, 1, [5, 5], stride=2)
+    return tf.reshape(tf.nn.tanh(h2), [-1, output_dim * output_dim])
 
 
 def linear_discriminator(x, hidden_size, scope='Discriminator', reuse=False):
@@ -51,7 +53,7 @@ def main():
   # Configure.
   mode = 'ebgan'
   params = {
-    'learning_rate': 0.001,
+    'learning_rate': 0.0005,
     'z_dim': 100,
     'generator': partial(conv_generator, output_dim=28, n_filters=64),
   }
@@ -63,7 +65,7 @@ def main():
   elif mode == 'ebgan':
     params.update({
       'discriminator': partial(linear_autoencoder_discriminator, output_dim=28,
-          hidden_sizes=[10], encoding_dim=5),
+          hidden_sizes=[50], encoding_dim=5),
       'loss_builder': partial(gan_model.make_ebgan_loss, epsilon=0.05)
     })
   tf.logging._logger.setLevel(logging.INFO)
@@ -76,7 +78,7 @@ def main():
   imgs = mnist_data.train.images
   if mnist_class is not None:
       imgs = np.array([x for idx, x in enumerate(mnist_data.train.images) if
-        mnist_data.train.labels[idx] == 4])
+        mnist_data.train.labels[idx] == mnist_class])
 
   # Setup monitors.
   print_monitor = tf.train.LoggingTensorHook(['loss_discr', 'loss_generator'],
