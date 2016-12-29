@@ -37,6 +37,7 @@ def main():
   mode = 'ebgan'
   params = {
     'learning_rate': 0.005,
+    'z_dim': 1,
     'generator': partial(linear_generator, hidden_size=10),
   }
   if mode == 'gan':
@@ -53,7 +54,7 @@ def main():
   data = np.random.normal(4, 0.5, 10000).astype(np.float32)
   data.sort()
   est = learn.SKCompat(learn.Estimator(
-      model_fn=gan_model.gan_model, model_dir='gan_intro/', params=params))
+      model_fn=gan_model.gan_model, model_dir='models/gan_intro/', params=params))
   print_monitor = tf.train.LoggingTensorHook(['loss_discr', 'loss_generator'],
       every_n_iter=100)
   est.fit(x=data, y=data, steps=10000, batch_size=32, monitors=[print_monitor])

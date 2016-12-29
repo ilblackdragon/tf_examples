@@ -33,16 +33,18 @@ def gan_model(feature, unused_target, mode, params):
   generator = params.get('generator')
   discriminator = params.get('discriminator')
   loss_builder = params.get('loss_builder')
+  z_dim = params.get('z_dim')
   initial_learning_rate = params.get('learning_rate', 0.05)
   decay_steps = params.get('decay_steps', 150)
   decay_rate = params.get('decay_rate', 0.95)
 
   # Create noise Z.
-  z = tf.random_uniform(tf.shape(feature), -1, 1, dtype=feature.dtype)
-  z.set_shape(feature.get_shape())
+  z = tf.random_uniform(tf.pack([tf.shape(feature)[0], z_dim]), -1, 1, dtype=feature.dtype)
+  z.set_shape([feature.get_shape()[0], z_dim])
 
   # Generate fake example.
   feature_generated = generator(z)
+  feature_generated = tf.identity(feature_generated, name='generated')
 
   # Discriminate true and generated example.
   discr_true, _ = discriminator(feature)
@@ -52,6 +54,8 @@ def gan_model(feature, unused_target, mode, params):
     e_gen = norm(e_gen)
     cov = tf.matmul(tf.transpose(e_gen), e_gen) * (1.0 - tf.eye(tf.shape(e_gen)[1]))
     regularizer = tf.reduce_mean(tf.abs(cov))
+  else:
+    regularizer = 0.0
 
   # Build GAN losses.
   loss_discr, loss_generator = loss_builder(

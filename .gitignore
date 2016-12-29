@@ -1,9 +1,15 @@
 # virtualenv
 .env/
 env/
+.DS_Store
 
 # data
-MNIST_data/
+MNIST-data/
+*/MNIST-data/
+
+# models
+*/models/
+models/
 
 # Ipython
 .ipynb_checkpoints/
