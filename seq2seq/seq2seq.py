@@ -4,6 +4,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import layers
 
+import timeline
+
 
 GO_TOKEN = 0
 END_TOKEN = 1
@@ -195,9 +197,11 @@ def train_seq2seq(
         ['predictions', 'train_pred'], every_n_iter=100,
         formatter=get_formatter(['predictions', 'train_pred'], vocab))
 
+    timeline_hook = timeline.TimelineHook(model_dir, every_n_iter=100)
     est.train(
         input_fn=input_fn,
-        hooks=[tf.train.FeedFnHook(feed_fn), print_inputs, print_predictions],
+        hooks=[tf.train.FeedFnHook(feed_fn), print_inputs, print_predictions,
+               timeline_hook],
         steps=10000)
 
 
